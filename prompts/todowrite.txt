@@ -1,0 +1,20 @@
+Create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and show the user your progress.
+
+When to use:
+- Complex multi-step tasks (3+ steps)
+- User provides multiple tasks
+- Non-trivial tasks requiring planning
+
+When NOT to use:
+- Single, straightforward tasks
+- Purely conversational or informational requests
+
+Each todo item has:
+- content: What needs to be done (e.g., "Run tests")
+- status: "pending" | "in_progress" | "completed"
+- activeForm: Present continuous form (e.g., "Running tests")
+
+Rules:
+- Only ONE task should be in_progress at a time
+- Mark tasks completed IMMEDIATELY after finishing
+- Never mark a task completed if it has unresolved errors

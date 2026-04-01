@@ -1,0 +1,7 @@
+Execute a bash command and return the output. Use this tool to run shell commands, inspect files, install packages, run tests, and interact with the system.
+
+Usage notes:
+- Always quote file paths that contain spaces with double quotes
+- You can chain commands with ';' or '&&'
+- Prefer absolute paths when possible
+- If a command creates files/directories, verify the parent directory exists first
