@@ -1,167 +1,103 @@
 # Mini Claw Code
 
-**An educational toy to illustrate the *idea* behind Claude Code -- nothing more.**
+**Educational toy to illustrate context engineering -- the core idea behind Claude Code.**
 
-> **Important disclaimer**: This project exists solely to demonstrate the **core concept** -- the agentic loop and context engineering pattern that powers tools like Claude Code. It is NOT a recreation of Claude Code, nor does it claim to be. The real Claude Code is a massive engineering effort: hardened infrastructure, security sandboxing, permission systems, LSP integration, multi-model orchestration, context window management, streaming, caching, IDE extensions, and countless edge cases handled by a world-class engineering team at Anthropic. I have enormous respect for all of that work. What you see here is just the **idea distilled to its skeleton** -- like drawing a stick figure to explain human anatomy. The skeleton helps you *understand*, but it's not the real thing.
+> **Disclaimer**: This is a stick figure, not human anatomy. The real Claude Code is a massive engineering effort (sandboxing, permissions, streaming, LSP, IDE integrations, etc.) by a world-class team. Respect the execution.
 
-## The Core Idea
+## What Is Context Engineering?
 
-At its heart, Claude Code is an **agentic loop** with **tools**:
+One sentence:
 
-```
-User Input -> LLM -> [Tool Call?] -> Execute Tool -> Feed Result Back -> LLM -> ... -> Final Answer
-```
+> **Push the right thing, at the right time.**
 
-This project strips that idea down to just **2 tools** to make the concept crystal clear:
+Or even shorter: **what** and **when**.
 
-| Tool | What it does |
-|------|-------------|
-| `bash` | Runs any shell command and returns the output |
-| `todowrite` | Tracks tasks with status (pending/in_progress/completed) |
-
-With just these 2 tools, the LLM can already:
-- Read files (`cat`, `ls`, `find`)
-- Edit files (`sed`, `echo >`)
-- Run tests (`pytest`, `npm test`)
-- Install packages (`pip install`, `npm install`)
-- Use git (`git add`, `git commit`, `git push`)
-- Plan and track multi-step work (via todowrite)
-
-That's the **idea**. But idea is only the starting point -- the real Claude Code has 20+ specialized tools (Read, Write, Edit, Grep, Glob, LSP, etc.) that are not just "wrappers around bash." They provide structured output, permission controls, performance optimization, better error handling, and UX that a raw bash command can never match. The engineering to make all of that work reliably at scale is where the real magic lives.
-
-## The Art of Context Engineering
-
-This project is a lesson in **context engineering** -- the craft of shaping what the LLM sees in its context window so it behaves the way you want.
-
-### What is Context Engineering?
-
-It's not just "prompt engineering." Context engineering is about designing the **entire information environment** the model operates in:
+You decide WHAT information the model needs, and WHEN to inject it into the context window.
 
 ```
 Context Window = System Prompt + Tool Descriptions + Conversation History + Tool Results
 ```
 
-Every single token in that window influences the model's behavior. In this project, there are **3 levers** of context engineering:
+Every token influences the model's next decision. This project demonstrates 3 levers, using just 2 tools (`bash` + `todowrite`) and 3 prompt files.
 
-### Lever 1: The System Prompt (`prompts/system_prompt.txt`)
+## Lever 1: System Prompt
 
-This is **who the agent is**. It defines:
-- **Identity**: "You are an interactive CLI tool that helps users with software engineering tasks"
-- **Behavior constraints**: Be concise, don't add preamble, don't surprise the user
-- **Decision-making rules**: When to be proactive vs. when to ask
+Static context. Injected once. Defines WHO the agent is -- identity, constraints, judgment rules.
 
-The system prompt is context engineering at the **character level** -- you're shaping the model's personality and judgment.
+## Lever 2: Tool Descriptions
 
-### Lever 2: Tool Descriptions (`prompts/bash.txt`, `prompts/todowrite.txt`)
+**Not API docs. Behavioral instructions disguised as documentation.**
 
-This is where context engineering gets interesting. Look at what tool descriptions actually do:
+`todowrite.txt` teaches the model WHEN to use it, WHEN NOT to, and HOW. Claude Code's real tool descriptions are 100+ lines each -- encoding expertise and guardrails directly into the context.
 
-**bash.txt** doesn't just say "run a command." It teaches the model:
-- Quote file paths with spaces
-- Chain commands with `&&` or `;`
-- Use absolute paths
-- Verify parent directories before creating files
+## Lever 3: Tool Results (the real magic)
 
-**todowrite.txt** doesn't just say "track tasks." It teaches the model:
-- WHEN to use it (complex tasks, 3+ steps)
-- WHEN NOT to use it (trivial tasks, informational questions)
-- HOW to use it (one in_progress at a time, mark complete immediately)
+The agent engineers its own context in real-time. Each tool call = a "what and when" decision.
 
-> **Key insight**: Tool descriptions are not just API docs. They are **behavioral instructions disguised as documentation.** The model reads them and internalizes the rules as part of its decision-making.
+### Example: Why TodoWrite Gets Called Repeatedly
 
-This is why Claude Code's real tool descriptions are so long (100+ lines each) -- they're not just describing parameters. They're encoding expertise, guardrails, and workflow patterns into the context.
+LLMs have a well-known problem: **lost in the middle**. Like humans -- after 30 minutes of conversation, you remember the start and the last few things, but the middle is fuzzy.
 
-### Lever 3: Tool Results (the feedback loop)
+If the agent plans 10 steps, by step 7 it has forgotten steps 8-10.
 
-Every tool result gets appended to the conversation history. This creates a **dynamic context** that grows as the agent works:
+Solution: **keep pushing the task list back into context.**
 
 ```
-[System Prompt]                     <- Static context
-[User: "fix the bug in auth.py"]   <- User intent
-[LLM calls bash: "cat auth.py"]    <- Agent's plan
-[Tool result: file contents...]     <- New knowledge
-[LLM calls bash: "sed ..."]        <- Informed action
-[Tool result: "(no output)"]       <- Confirmation
-[LLM: "Fixed the bug."]            <- Final answer
+[TodoWrite] Plan: 5 tasks             <- Tasks enter context
+[bash: work on task 1...]
+[TodoWrite] Mark task 1 done           <- Full task list refreshed
+[bash: work on task 2...]
+[TodoWrite] Mark task 2 done           <- Refreshed again, near the END
+...                                       where the model pays most attention
 ```
 
-The context is being **engineered in real-time** by the agent itself. Each tool call is a decision about what information to pull into the context window.
-
-Even `todowrite`'s return message is context engineering:
+Even the return message is context engineering:
 ```
-"Todos have been modified successfully. Ensure that you continue to use 
-the todo list to track your progress. Please proceed with the current 
-tasks if applicable"
+"Todos have been modified successfully. Ensure that you continue 
+to use the todo list to track your progress."
 ```
-This isn't just a confirmation -- it's a **behavioral nudge** injected back into the context, reminding the model to keep using the todo list and keep working.
+Not a confirmation -- a **behavioral nudge** injected at the perfect moment.
 
-### Why This Matters
+**What**: the task list. **When**: repeatedly, throughout the work.
 
-The difference between a bad AI agent and a great one is NOT the model. It's the context:
+### Beyond This Toy: How Claude Code Reads Codebases
 
-| Bad Context Engineering | Good Context Engineering |
-|------------------------|------------------------|
-| "You are a helpful assistant" | Specific identity + constraints + examples |
-| "bash: runs commands" | Detailed tool docs with when/how/guardrails |
-| No task tracking | TodoWrite nudges the model to plan and track |
-| Raw tool results | Structured results with behavioral hints |
+Claude Code uses no indexing. No embeddings. No vector DB. **Intentional.**
 
-Context engineering is ONE pillar of what makes Claude Code great. But it's far from the only one. The real product also requires:
-- **Infrastructure engineering**: Streaming, caching, context window management, model routing
-- **Security engineering**: Sandboxing, permission systems, preventing code injection
-- **Developer experience**: IDE integrations, keyboard shortcuts, hooks, slash commands
-- **Reliability engineering**: Error recovery, retry logic, graceful degradation
-- **Performance engineering**: Parallel tool calls, smart caching, token optimization
+It uses primitives -- `Read`, `Grep`, `Glob` -- to search adaptively based on the current task. The agent decides what to pull into context, when it needs it.
 
-This project only demonstrates the context engineering pillar -- in ~60 lines of Python + 3 text files. Respect the iceberg beneath the surface.
+This is why it outperforms index-based tools despite having no index. The right information at the right time beats a static dump of "everything that might be relevant."
 
-## How it works
+Same model, different engineering, wildly different results. Don't underestimate that.
+
+## How It Works
 
 ```
-main.py                      -- The agentic loop (~60 lines)
+main.py              -- Agentic loop (~68 lines)
 prompts/
-  system_prompt.txt           -- Who the agent is and how it behaves
-  bash.txt                    -- Tool description for bash (behavioral rules)
-  todowrite.txt               -- Tool description for todowrite (usage patterns)
+  system_prompt.txt  -- WHO the agent is
+  bash.txt           -- HOW bash behaves  
+  todowrite.txt      -- HOW todowrite behaves
 ```
-
-### The Agent Loop (the heart of it all)
 
 ```python
 while True:
-    response = llm.invoke(messages)       # 1. Ask the LLM
-    messages.append(response)
-
-    if not response.tool_calls:           # 2. No tools? Done.
+    response = llm.invoke(messages)       # Ask the LLM
+    if not response.tool_calls:           # No tools? Done.
         return response.content
-
-    for tc in response.tool_calls:        # 3. Execute each tool
+    for tc in response.tool_calls:        # Execute tools
         result = tools[tc["name"]].invoke(tc["args"])
-        messages.append(ToolMessage(...)) # 4. Feed result back
-                                          # 5. Loop back to step 1
+        messages.append(ToolMessage(...)) # Feed result back, loop
 ```
-
-This is the same pattern used by Claude Code, ChatGPT, Cursor, and every other AI coding agent. The only differences are:
-- **Which tools** are available (context engineering)
-- **How good the tool descriptions are** (context engineering)
-- **How good the system prompt is** (context engineering)
-- **Which model** powers it
 
 ## Quick Start
 
 ```bash
-# 1. Setup
-cd ~/dev/mini-claw-code
-uv sync
-cp .env.example .env
-# Edit .env with your XAI_API_KEY
-
-# 2. Run
+cd ~/dev/mini-claw-code && uv sync
+cp .env.example .env  # add XAI_API_KEY
 uv run python main.py
 ```
 
 ## Key Takeaway
 
-> The **idea** behind Claude Code = LLM + Tool Loop + Context Engineering
->
-> But an idea is cheap. Execution is everything. The real Claude Code is thousands of engineering hours turning this simple idea into a product that millions of developers rely on daily. This project helps you understand the idea. Go use the real thing to appreciate the execution.
+> Context engineering = the right thing, at the right time. That's it.
