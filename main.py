@@ -28,7 +28,7 @@ with open("prompts/todowrite.txt", "r") as f:
 	todowrite.description = f.read()
 
 tools = [bash, todowrite]
-llm = ChatOpenAI(model="grok-4-fast-non-reasoning", base_url="https://api.x.ai/v1", api_key=os.getenv("XAI_API_KEY")).bind_tools(tools)
+llm = ChatOpenAI(model="deepseek-v4-flash", base_url="https://api.deepseek.com", api_key=os.getenv("DEEPSEEK_API_KEY")).bind_tools(tools)
 tools_by_name = {t.name: t for t in tools}
 
 print("Available tools:")

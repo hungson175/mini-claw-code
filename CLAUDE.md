@@ -25,7 +25,7 @@ prompts/todowrite.txt     -- TodoWrite tool description
 uv sync && uv run python main.py
 ```
 
-Requires `XAI_API_KEY` in `.env` (uses xAI's grok-4-fast-non-reasoning).
+Requires `DEEPSEEK_API_KEY` in `.env` (uses DeepSeek V4 Flash).
 
 ## Rules
 

@@ -94,7 +94,7 @@ while True:
 
 ```bash
 cd ~/dev/mini-claw-code && uv sync
-cp .env.example .env  # add XAI_API_KEY
+cp .env.example .env  # add DEEPSEEK_API_KEY
 uv run python main.py
 ```
 
