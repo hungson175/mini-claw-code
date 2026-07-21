@@ -1,10 +1,17 @@
 Execute a bash command and return the output. Use this tool to run shell commands, inspect files, install packages, run tests, and interact with the system.
 
+Args:
+	command: the shell command to run (required)
+	background: if true, start the command detached and return immediately with PID + log path (for long-running processes like dev servers / watchers). if false (default), wait for the command to finish and return stdout/stderr.
+
 Usage notes:
 - Always quote file paths that contain spaces with double quotes
 - You can chain commands with ';' or '&&'
 - Prefer absolute paths when possible
 - If a command creates files/directories, verify the parent directory exists first
-- Never run interactive prompts — stdin is not a TTY for you. Always use non-interactive flags (e.g. npm --yes, create-vite --no-interactive, apt -y)
+- Never run interactive prompts — stdin is not a TTY. Always use non-interactive flags (e.g. npm --yes, create-vite --no-interactive)
 - For Vite React scaffolding: `npm create vite@latest <dir> --yes -- --template react --no-interactive` then `npm install --prefer-offline`
-- Prefer `npm install --prefer-offline` / `npm create ... --yes` so installs reuse the local npm cache; do not clear the cache
+- Prefer `npm install --prefer-offline` / `npm create ... --yes`; do not clear the npm cache
+- CRITICAL: for `npm run dev`, `vite`, or any long-lived server, you MUST call bash with background=true. Foreground servers freeze the agent.
+- Example: bash(command="cd /path/to/app && npm run dev -- --host 127.0.0.1 --port 5173", background=true)
+- Kill an old server first in a separate foreground call if needed, e.g. `lsof -tiTCP:5173 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true`
