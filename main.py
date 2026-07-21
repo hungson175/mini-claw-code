@@ -11,7 +11,7 @@ load_dotenv(override=True)
 @tool
 def bash(command: str) -> str:
 	"""Execute a bash command and return the output."""
-	result = subprocess.run(command, shell=True, capture_output=True, text=True)
+	result = subprocess.run(command, shell=True, capture_output=True, text=True, stdin=subprocess.DEVNULL)
 	output = result.stdout
 	if result.stderr:
 		output += "\nSTDERR:\n" + result.stderr

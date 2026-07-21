@@ -5,6 +5,6 @@ Usage notes:
 - You can chain commands with ';' or '&&'
 - Prefer absolute paths when possible
 - If a command creates files/directories, verify the parent directory exists first
-- Never run interactive prompts — there is no TTY. Always use non-interactive flags (e.g. npm --yes, apt -y)
-- For Vite React scaffolding: `npm create vite@latest <dir> --yes -- --template react` then `npm install --prefer-offline`
+- Never run interactive prompts — stdin is not a TTY for you. Always use non-interactive flags (e.g. npm --yes, create-vite --no-interactive, apt -y)
+- For Vite React scaffolding: `npm create vite@latest <dir> --yes -- --template react --no-interactive` then `npm install --prefer-offline`
 - Prefer `npm install --prefer-offline` / `npm create ... --yes` so installs reuse the local npm cache; do not clear the cache
