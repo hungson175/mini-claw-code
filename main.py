@@ -1,5 +1,7 @@
 import os
+import sys
 import json
+import select
 import subprocess
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -60,8 +62,22 @@ print("An educational minimal clone of Claude Code")
 print("Tools: bash, todowrite")
 print("Type 'quit' to exit\n")
 
+def read_user_input():
+	# A pasted multi-line prompt arrives as many lines at once, but input() takes
+	# only the first. Drain the rest so the whole paste is ONE message.
+	first = input("You: ")
+	if not sys.stdin.isatty():
+		return first
+	rest = []
+	while select.select([sys.stdin], [], [], 0.05)[0]:
+		line = sys.stdin.readline()
+		if not line:
+			break
+		rest.append(line.rstrip("\n"))
+	return "\n".join([first, *rest]) if rest else first
+
 while True:
-	user_input = input("You: ")
+	user_input = read_user_input()
 	if user_input.strip().lower() == "quit":
 		break
 	print(chat(user_input))
